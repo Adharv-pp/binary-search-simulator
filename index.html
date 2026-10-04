@@ -1,0 +1,1394 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark light">
+<title>Binary Search Simulator · Student Roll Number Lookup · DAA CIA 3(b)</title>
+<!-- Fonts fall back to local stacks when offline; the file itself needs no network. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* ==========================================================================
+   1. THEME TOKENS (dark default, light via [data-theme="light"])
+   ========================================================================== */
+:root{
+  --font-ui:'Space Grotesk','Avenir Next','Trebuchet MS','Segoe UI',sans-serif;
+  --font-mono:'JetBrains Mono','Cascadia Mono','Consolas','Menlo',monospace;
+}
+[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0c1117;
+  --bg-tint:radial-gradient(1100px 420px at 75% -8%, rgba(45,212,191,.05), transparent 60%);
+  --panel:#141a22; --panel-2:#1a222d;
+  --border:#26313e; --border-soft:#212b37;
+  --text:#e9eff6; --dim:#93a3b6; --faint:#5c6b7d;
+  --box-bg:#1d2734; --box-border:#35485e;
+  --accent:#2dd4bf; --accent-grad:linear-gradient(135deg,#2dd4bf,#34d399);
+  --on-accent:#03231c;
+  --low:#45b3ff; --mid:#2dd4bf; --mid-bg:rgba(45,212,191,.13);
+  --high:#f0a13a; --found:#22c55e; --bad:#f37272;
+  --pill-fg:#06202c;
+  --shadow:0 10px 28px rgba(0,0,0,.35);
+}
+[data-theme="light"]{
+  color-scheme:light;
+  --bg:#eef2f7;
+  --bg-tint:radial-gradient(1100px 420px at 75% -8%, rgba(13,148,136,.07), transparent 60%);
+  --panel:#ffffff; --panel-2:#f2f6fa;
+  --border:#d9e2ec; --border-soft:#e3eaf2;
+  --text:#17222e; --dim:#55677a; --faint:#8494a6;
+  --box-bg:#ffffff; --box-border:#c4d2e0;
+  --accent:#0d9488; --accent-grad:linear-gradient(135deg,#0d9488,#059669);
+  --on-accent:#ffffff;
+  --low:#0369a1; --mid:#0d9488; --mid-bg:rgba(13,148,136,.10);
+  --high:#b45309; --found:#16a34a; --bad:#dc2626;
+  --pill-fg:#ffffff;
+  --shadow:0 8px 22px rgba(23,34,46,.08);
+}
+
+/* ==========================================================================
+   2. BASE
+   ========================================================================== */
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  font-family:var(--font-ui);font-size:15px;line-height:1.55;color:var(--text);
+  background:var(--bg-tint),var(--bg);
+  -webkit-font-smoothing:antialiased;min-height:100vh;
+}
+[hidden]{display:none!important}
+.mono{font-family:var(--font-mono)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
+.topbar{height:3px;background:var(--accent-grad)}
+.container{max-width:1240px;margin:0 auto;padding:0 20px 34px}
+
+/* masthead ------------------------------------------------------------ */
+.masthead{display:flex;justify-content:space-between;align-items:flex-end;gap:14px;padding:26px 20px 4px;flex-wrap:wrap}
+h1{
+  font-size:clamp(24px,3.4vw,34px);font-weight:700;letter-spacing:-.02em;line-height:1.15;
+  background:var(--accent-grad);-webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.subtitle{font-family:var(--font-mono);font-size:13px;color:var(--dim);margin-top:5px;letter-spacing:.04em}
+.mast-right{display:flex;align-items:center;gap:10px}
+.chip{
+  font-family:var(--font-mono);font-size:11.5px;font-weight:600;padding:4px 10px;border-radius:999px;
+  border:1px solid var(--border);color:var(--dim);background:var(--panel-2);white-space:nowrap;
+}
+.iconbtn{
+  width:40px;height:40px;border-radius:11px;border:1px solid var(--border);background:var(--panel);
+  color:var(--text);cursor:pointer;display:grid;place-items:center;transition:border-color .15s,background .15s;
+}
+.iconbtn:hover{border-color:var(--accent)}
+[data-theme="dark"] .icon-moon{display:none}
+[data-theme="light"] .icon-sun{display:none}
+
+/* cards ---------------------------------------------------------------- */
+.card{
+  background:var(--panel);border:1px solid var(--border);border-radius:14px;
+  box-shadow:var(--shadow);padding:18px 20px;margin-bottom:18px;
+}
+.card-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:13px;flex-wrap:wrap}
+.card-title{
+  font-size:11.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--dim);font-weight:600;
+  display:flex;align-items:center;gap:9px;
+}
+.card-title::before{content:'';width:15px;height:2px;border-radius:2px;background:var(--accent-grad);flex:none}
+.hint{font-size:12px;color:var(--faint)}
+
+/* "how it works" (native <details>) ----------------------------------- */
+details.hiw{padding:0;overflow:hidden}
+details.hiw summary{
+  cursor:pointer;list-style:none;display:flex;align-items:center;gap:10px;
+  padding:15px 20px;font-weight:600;font-size:15px;user-select:none;
+}
+details.hiw summary::-webkit-details-marker{display:none}
+details.hiw summary .chev{margin-left:auto;transition:transform .25s;color:var(--dim)}
+details.hiw[open] summary .chev{transform:rotate(180deg)}
+.hiw-body{padding:2px 20px 17px;border-top:1px solid var(--border-soft)}
+.hiw-body ol{margin:10px 0 0 18px;display:grid;gap:7px;color:var(--dim);font-size:14px}
+.hiw-body b{color:var(--text)}
+.hiw-body code{font-family:var(--font-mono);font-size:12.5px;color:var(--accent)}
+
+/* inputs / buttons ------------------------------------------------------ */
+.cfg-row{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end}
+.field{display:flex;flex-direction:column;gap:6px;flex:1;min-width:230px}
+.field.f-tgt{flex:0 0 130px;min-width:130px}
+.field label{font-size:12px;color:var(--dim);font-weight:600}
+input[type=text],select{
+  background:var(--panel-2);border:1px solid var(--border);color:var(--text);
+  border-radius:9px;padding:9px 12px;font:inherit;font-size:14px;width:100%;
+  transition:border-color .2s;
+}
+input[type=text]:focus,select:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 3px rgba(45,212,191,.15)}
+.btn{
+  border:1px solid var(--border);background:var(--panel-2);color:var(--text);
+  padding:10px 16px;border-radius:9px;cursor:pointer;font:inherit;font-weight:600;font-size:13px;
+  display:inline-flex;align-items:center;gap:7px;white-space:nowrap;
+  transition:border-color .15s,background .15s,transform .08s;
+}
+.btn:hover{border-color:var(--accent)}
+.btn:active{transform:translateY(1px)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn.primary{background:var(--accent-grad);border:none;color:var(--on-accent);font-weight:700}
+.btn.primary:hover{filter:brightness(1.06)}
+.btn.sm{padding:6px 11px;font-size:12px}
+.cfg-row2{display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin-top:14px}
+.preset-group,.rand-group{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.pg-label{font-size:11.5px;color:var(--faint);font-weight:600;letter-spacing:.06em;text-transform:uppercase;margin-right:2px}
+.rand-group select{width:auto;padding:7px 10px;font-size:13px}
+.config-msg{margin-top:14px;border-radius:10px;padding:11px 13px;font-size:13.5px;line-height:1.5}
+.config-msg code{font-family:var(--font-mono);font-size:12.5px}
+.config-msg.error{background:rgba(243,114,114,.10);border:1px solid rgba(243,114,114,.45);color:var(--bad)}
+.config-msg.ok{background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.35);color:var(--found)}
+.config-msg.warn{background:rgba(240,161,58,.09);border:1px solid rgba(240,161,58,.45);color:var(--high);display:flex;gap:10px;align-items:flex-start}
+.config-msg.warn .wm{flex:none;margin-top:2px}
+.config-msg.warn .btn{margin-top:8px}
+
+/* ==========================================================================
+   3. VISUALISATION STAGE
+   ========================================================================== */
+.target-chip{
+  font-family:var(--font-mono);font-size:12.5px;font-weight:600;padding:4px 12px;border-radius:999px;
+  border:1px solid var(--accent);color:var(--accent);background:rgba(45,212,191,.07);
+  transition:color .3s,border-color .3s;
+}
+.target-chip.miss{border-color:var(--bad);color:var(--bad)}
+.stage-wrap{display:flex;gap:0}
+.lane-labels{width:52px;flex:none}
+.lane-labels span{
+  display:block;height:34px;line-height:34px;font-family:var(--font-mono);
+  font-size:11px;letter-spacing:.05em;user-select:none;
+}
+.ll-low{color:var(--low)} .ll-mid{color:var(--mid)} .ll-high{color:var(--high)}
+.stage-scroll{flex:1;min-width:0;overflow-x:auto;padding-bottom:4px;scrollbar-width:thin}
+.stage-scroll::-webkit-scrollbar{height:7px}
+.stage-scroll::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+.stage-inner{position:relative;width:max-content;min-width:100%;padding:2px 12px 6px 2px;--cellw:60px}
+
+/* the three pointer lanes (tracks + sliding markers) ------------------- */
+.lanes{position:relative;height:102px}
+.track{position:absolute;left:0;width:100%;height:2px;background:var(--border-soft);opacity:.8}
+.track.t1{top:16px}.track.t2{top:50px}.track.t3{top:84px}
+.marker{
+  position:absolute;height:26px;transform:translateX(-50%);pointer-events:none;
+  transition:left .55s cubic-bezier(.25,1,.35,1),opacity .35s;
+}
+.marker.hidden{opacity:0}
+.marker.snapx,.snap .marker{transition:none!important}
+.m-low{top:4px}.m-mid{top:38px}.m-high{top:72px}
+.marker .mpill{
+  display:flex;align-items:center;justify-content:center;height:26px;min-width:34px;padding:0 10px;
+  border-radius:13px;font-family:var(--font-mono);font-weight:700;font-size:13px;color:var(--pill-fg);
+  box-shadow:0 3px 10px rgba(0,0,0,.22);
+}
+.m-low .mpill{background:var(--low)}
+.m-high .mpill{background:var(--high)}
+.m-mid .mpill{background:var(--mid)}
+
+/* active-window rectangle behind the cells ------------------------------ */
+.window{
+  position:absolute;border-radius:12px;pointer-events:none;z-index:0;
+  background:rgba(45,212,191,.055);border:1.5px dashed rgba(45,212,191,.4);
+  transition:left .5s cubic-bezier(.25,1,.35,1),width .5s cubic-bezier(.25,1,.35,1),opacity .4s;
+}
+[data-theme="light"] .window{background:rgba(13,148,136,.06);border-color:rgba(13,148,136,.45)}
+.window.off{opacity:0}
+
+/* array cells ------------------------------------------------------------ */
+.cells{display:flex;gap:8px;margin-top:6px;position:relative;z-index:1}
+.cell{width:var(--cellw);display:flex;flex-direction:column;align-items:center;gap:6px}
+.box{
+  position:relative;width:100%;height:56px;border-radius:10px;
+  background:var(--box-bg);border:1.5px solid var(--box-border);
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-mono);font-weight:600;
+  font-size:clamp(9px,calc(var(--cellw)*.30),17px);
+  transition:opacity .45s,filter .45s,transform .45s,border-color .3s,background .3s,color .3s;
+}
+.idx{font-family:var(--font-mono);font-size:11px;color:var(--dim);transition:opacity .45s}
+.cell.elim .box{opacity:.26;filter:grayscale(.85);transform:scale(.92)}
+.cell.elim .idx{opacity:.3}
+.cell.mid .box{border-color:var(--mid);background:var(--mid-bg);transform:translateY(-3px);animation:midpulse .5s ease}
+@keyframes midpulse{40%{transform:translateY(-3px) scale(1.07)}}
+/* per-box pointer strips (same colors as the lanes above) */
+.strip{position:absolute;left:7px;right:7px;height:3px;border-radius:2px;opacity:0;transition:opacity .3s}
+.s-low{top:6px;background:var(--low)}
+.s-mid{top:11px;background:var(--mid)}
+.s-high{top:16px;background:var(--high)}
+.cell.has-low .s-low,.cell.has-mid .s-mid,.cell.has-high .s-high{opacity:1}
+/* found state + celebration */
+.cell.found .box{
+  background:var(--found);border-color:var(--found);color:#fff;transform:translateY(-3px);
+  animation:celebrate .75s cubic-bezier(.3,1.4,.4,1);
+}
+.cell.found .box::after{
+  content:'';position:absolute;inset:-3px;border-radius:13px;border:2px solid var(--found);
+  animation:ripple .9s ease-out forwards;
+}
+@keyframes celebrate{0%{transform:scale(1)}35%{transform:scale(1.14)}70%{transform:scale(.97)}100%{transform:scale(1.05)}}
+@keyframes ripple{from{opacity:.9;transform:scale(1)}to{opacity:0;transform:scale(1.55)}}
+
+/* transport controls ------------------------------------------------------ */
+.transport{
+  display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin-top:16px;
+  padding-top:15px;border-top:1px solid var(--border-soft);
+}
+.t-buttons{display:flex;gap:8px}
+.ibtn{
+  width:42px;height:42px;border-radius:11px;border:1px solid var(--border);background:var(--panel-2);
+  color:var(--text);cursor:pointer;display:grid;place-items:center;user-select:none;
+  transition:border-color .15s,transform .08s;
+}
+.ibtn:hover:not(:disabled){border-color:var(--accent)}
+.ibtn:active:not(:disabled){transform:translateY(1px)}
+.ibtn:disabled{opacity:.35;cursor:not-allowed}
+.ibtn.primary{width:54px;background:var(--accent-grad);border:none;color:var(--on-accent)}
+.ibtn.primary:hover{filter:brightness(1.07)}
+.t-speed{display:flex;align-items:center;gap:9px}
+.t-speed label{font-size:12px;color:var(--dim);font-weight:600}
+.t-speed input[type=range]{width:110px;accent-color:var(--accent)}
+.t-speed .mono{font-size:12px;color:var(--dim);min-width:42px}
+.t-progress{display:flex;align-items:center;gap:12px;flex:1;min-width:180px}
+.t-progress .mono{font-size:12.5px;color:var(--dim)}
+.pbar{flex:1;height:4px;border-radius:4px;background:var(--panel-2);border:1px solid var(--border-soft);overflow:hidden}
+#pfill{height:100%;width:0;border-radius:4px;background:var(--accent-grad);transition:width .35s}
+.kbd-hint{font-size:11.5px;color:var(--faint);width:100%}
+kbd{
+  font-family:var(--font-mono);font-size:10.5px;padding:1px 6px;border-radius:5px;
+  border:1px solid var(--border);border-bottom-width:2px;background:var(--panel-2);color:var(--dim);
+}
+
+/* step explanation -------------------------------------------------------- */
+.explain{
+  margin-top:14px;background:var(--panel-2);border:1px solid var(--border-soft);
+  border-left:3px solid var(--accent);border-radius:10px;padding:13px 15px;min-height:70px;
+  display:flex;gap:12px;align-items:flex-start;
+}
+.step-badge{
+  flex:none;font-family:var(--font-mono);font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px;
+  background:rgba(45,212,191,.12);color:var(--accent);border:1px solid rgba(45,212,191,.4);margin-top:2px;
+}
+[data-theme="light"] .step-badge{background:rgba(13,148,136,.1);border-color:rgba(13,148,136,.4)}
+.step-badge.b-good{color:var(--found);background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.45)}
+.step-badge.b-bad{color:var(--bad);background:rgba(243,114,114,.12);border-color:rgba(243,114,114,.45)}
+.step-badge.b-cut{color:var(--high);background:rgba(240,161,58,.12);border-color:rgba(240,161,58,.45)}
+.explain p{font-size:14.5px;line-height:1.6}
+
+/* ==========================================================================
+   4. PANEL GRID (pseudocode / stack / stats / chart / complexity)
+   ========================================================================== */
+.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:18px;margin-bottom:18px}
+.grid>.card{margin:0;min-width:0}
+.g-code{grid-column:span 5}
+.g-stack{grid-column:span 4}
+.g-stats{grid-column:span 3}
+.g-chart{grid-column:span 6}
+.g-cx{grid-column:span 6}
+
+/* pseudocode -------------------------------------------------------------- */
+.code{display:flex;flex-direction:column;gap:2px;overflow-x:auto}
+.cl{
+  display:flex;gap:11px;padding:4px 10px;border-radius:7px;
+  font-family:var(--font-mono);font-size:12.4px;color:var(--dim);white-space:pre;
+  transition:background .25s,color .25s;
+}
+.cl .ln{width:14px;text-align:right;color:var(--faint);flex:none;user-select:none}
+.cl.on{background:rgba(45,212,191,.10);color:var(--text);box-shadow:inset 2.5px 0 0 var(--accent)}
+[data-theme="light"] .cl.on{background:rgba(13,148,136,.09)}
+.code-note{margin-top:11px;font-size:11.5px;color:var(--faint)}
+
+/* call stack -------------------------------------------------------------- */
+.stack-list{display:flex;flex-direction:column;gap:8px;min-height:64px}
+.frame{
+  display:flex;align-items:center;gap:9px;padding:8px 11px;border-radius:10px;
+  border:1px solid var(--border-soft);background:var(--panel-2);flex-wrap:wrap;
+}
+.frame.enter{animation:frameIn .35s ease}
+@keyframes frameIn{from{opacity:0;transform:translateY(-10px)}}
+.frame code{font-family:var(--font-mono);font-size:12.5px;color:var(--text)}
+.fmeta{font-family:var(--font-mono);font-size:11px;color:var(--faint)}
+.fchip{
+  margin-left:auto;font-family:var(--font-mono);font-size:10.5px;font-weight:600;
+  padding:2px 9px;border-radius:999px;white-space:nowrap;
+}
+.fchip.run{color:var(--accent);background:rgba(45,212,191,.12);border:1px solid rgba(45,212,191,.35)}
+.fchip.wait{color:var(--dim);border:1px dashed var(--border)}
+.fchip.ret{color:var(--found);background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.4)}
+.fchip.neg,.chip.neg{color:var(--bad);border-color:rgba(243,114,114,.45)!important;background:rgba(243,114,114,.1)!important}
+.chip.ret-chip{color:var(--found);border-color:rgba(34,197,94,.45)}
+.stack-empty{font-size:12.5px;color:var(--faint);padding:14px 4px;font-family:var(--font-mono)}
+.footnote{margin-top:12px;font-size:11.5px;color:var(--faint);line-height:1.55}
+.footnote code{font-family:var(--font-mono);font-size:11px}
+
+/* stats -------------------------------------------------------------------- */
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stat{background:var(--panel-2);border:1px solid var(--border-soft);border-radius:10px;padding:10px 12px}
+.stat .sl{font-size:10px;letter-spacing:.11em;text-transform:uppercase;color:var(--faint);font-weight:700}
+.stat .sv{font-family:var(--font-mono);font-size:23px;font-weight:700;color:var(--accent);line-height:1.25;margin-top:2px}
+.stat .sx{font-size:10.8px;color:var(--dim);margin-top:2px;line-height:1.5;overflow:hidden;text-overflow:ellipsis}
+.stat .sx.mono{font-family:var(--font-mono);font-size:10.5px;white-space:nowrap}
+
+/* comparison chart ---------------------------------------------------------- */
+.chart{display:flex;flex-direction:column;gap:13px;margin-top:4px}
+.chart-row{display:grid;grid-template-columns:78px 1fr 36px;align-items:center;gap:11px}
+.clab{font-size:12.5px;color:var(--dim);font-weight:600}
+.cbar{height:23px;border-radius:7px;background:var(--panel-2);border:1px solid var(--border-soft);overflow:hidden}
+.fill{height:100%;width:0;border-radius:inherit;transition:width .9s cubic-bezier(.2,.8,.2,1)}
+.fill.bin{background:var(--accent-grad)}
+.fill.lin{background:var(--faint)}
+.cnum{font-family:var(--font-mono);font-size:13px;font-weight:700;text-align:right}
+.chart-ph{font-size:12.5px;color:var(--faint);margin-top:6px}
+.chart-verdict{font-size:13px;color:var(--text);margin-top:10px;line-height:1.55}
+
+/* complexity ------------------------------------------------------------------ */
+.cx-row{
+  display:grid;grid-template-columns:118px 1fr;gap:12px;padding:8px 2px;
+  border-bottom:1px dashed var(--border-soft);align-items:baseline;
+}
+.cx-row:last-child{border-bottom:none}
+.cx-k{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);font-weight:700}
+.cx-v{font-size:13.5px;line-height:1.55}
+.cx-v code{font-family:var(--font-mono);font-size:12.5px;color:var(--accent);font-weight:600}
+.cx-v em{font-style:normal;color:var(--dim);font-size:12.5px;display:block;margin-top:1px}
+
+/* footer ------------------------------------------------------------------------ */
+footer{padding:22px 20px 30px;text-align:center;font-size:12px;color:var(--faint);border-top:1px solid var(--border-soft)}
+
+/* ==========================================================================
+   5. RESPONSIVE + MOTION
+   ========================================================================== */
+@media (max-width:1080px){
+  .g-code{grid-column:span 12}
+  .g-stack,.g-stats,.g-chart,.g-cx{grid-column:span 6}
+}
+@media (max-width:680px){
+  .g-stack,.g-stats,.g-chart,.g-cx{grid-column:span 12}
+  .masthead{align-items:flex-start;flex-direction:column;padding-top:20px}
+  .lane-labels{width:40px}
+  .lane-labels span{font-size:9.5px}
+  .t-progress{min-width:100%}
+  .field.f-tgt{flex:1;min-width:120px}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.001s!important;transition-duration:.001s!important}
+}
+</style>
+</head>
+<body>
+<div class="topbar"></div>
+
+<!-- ======================= MASTHEAD ======================= -->
+<header class="masthead container" style="padding-left:0;padding-right:0">
+  <div>
+    <h1>Binary Search Simulator</h1>
+    <p class="subtitle">Student Roll Number Lookup &middot; DAA CIA 3(b) &middot; Divide &amp; Conquer</p>
+  </div>
+  <div class="mast-right">
+    <span class="chip mono">O(log n)</span>
+    <button class="iconbtn" id="themeBtn" aria-label="Switch to light theme" title="Toggle light / dark theme">
+      <svg class="icon-sun" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="4"/><path d="M12 1.5v3M12 19.5v3M4.6 4.6l2.1 2.1M17.3 17.3l2.1 2.1M1.5 12h3M19.5 12h3M4.6 19.4l2.1-2.1M17.3 6.7l2.1-2.1"/>
+      </svg>
+      <svg class="icon-moon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true">
+        <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>
+      </svg>
+    </button>
+  </div>
+</header>
+
+<main class="container">
+  <noscript><div class="card" style="color:var(--bad)">This simulator needs JavaScript to run.</div></noscript>
+
+  <!-- ======================= HOW IT WORKS ======================= -->
+  <details class="card hiw" open>
+    <summary>
+      How binary search works
+      <svg class="chev" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+    </summary>
+    <div class="hiw-body">
+      <ol>
+        <li><b>The problem:</b> a college has thousands of students, each with a roll number. Looking up one specific roll number in a sorted list by checking every record (linear search) is slow and does not scale.</li>
+        <li>Binary search solves this by looking at the <b>middle</b> roll number of the current window <code>[low &hellip; high]</code>.</li>
+        <li>If it <b>equals the target roll number</b>, return its index. If it is <b>greater</b>, the target can only be to the <b>left</b>; if <b>smaller</b>, only to the <b>right</b> &mdash; the list is sorted, so an entire half becomes impossible at once.</li>
+        <li><b>Discard</b> the impossible half and repeat on the survivor: each call solves a problem of size <code>n/2</code> plus <code>O(1)</code> work.</li>
+        <li>That is the divide-and-conquer recurrence <code>T(n) = T(n/2) + O(1) = O(log n)</code> &mdash; a college of a million roll numbers would need at most 20 probes.</li>
+      </ol>
+    </div>
+  </details>
+
+  <!-- ======================= INPUT / CONFIG ======================= -->
+  <section class="card" aria-label="Input configuration">
+    <div class="card-head">
+      <div class="card-title">Input</div>
+      <span class="hint">binary search requires a <b>sorted</b> list of roll numbers</span>
+    </div>
+    <div class="cfg-row">
+      <div class="field">
+        <label for="arrInput">Sorted roll numbers &mdash; comma separated</label>
+        <input type="text" id="arrInput" spellcheck="false" autocomplete="off"
+               placeholder="101, 108, 115, 122, 130, 146, 158, 167, 179, 190">
+      </div>
+      <div class="field f-tgt">
+        <label for="targetInput">Target roll no.</label>
+        <input type="text" id="targetInput" spellcheck="false" autocomplete="off" inputmode="numeric" placeholder="146">
+      </div>
+      <button class="btn primary" id="btnLoad">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true"><polygon points="7 4.5 20 12 7 19.5"/></svg>
+        Load &amp; trace
+      </button>
+    </div>
+    <div class="cfg-row2">
+      <div class="preset-group">
+        <span class="pg-label">Presets</span>
+        <button class="btn sm" id="btnPDefault" title="Roll numbers [101,108,115,122,130,146,158,167,179,190], target 146 — the classic 3-comparison walkthrough">Default example</button>
+        <button class="btn sm" id="btnPFirst" title="Target = first roll number of the current list">Target at first</button>
+        <button class="btn sm" id="btnPLast" title="Target = last roll number of the current list">Target at last</button>
+        <button class="btn sm" id="btnPBest" title="Target equals the very first mid — found in a single comparison">Best case &middot; first mid</button>
+        <button class="btn sm" id="btnPAbsent" title="A roll number guaranteed to be missing from the list">Not found</button>
+      </div>
+      <div class="rand-group">
+        <span class="pg-label">Random</span>
+        <label for="sizeSel" class="sr-only" style="position:absolute;left:-9999px">Random roll-number list size</label>
+        <select id="sizeSel" aria-label="Random roll-number list size">
+          <option value="6">6</option><option value="8">8</option><option value="10">10</option>
+          <option value="12" selected>12</option><option value="16">16</option><option value="20">20</option>
+          <option value="25">25</option><option value="30">30</option>
+        </select>
+        <button class="btn sm" id="btnRandom" title="Generate a random sorted roll-number list and a random target">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <rect x="3.2" y="3.2" width="17.6" height="17.6" rx="4"/>
+            <circle cx="8.3" cy="8.3" r="1.5" fill="currentColor" stroke="none"/><circle cx="15.7" cy="8.3" r="1.5" fill="currentColor" stroke="none"/>
+            <circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/>
+            <circle cx="8.3" cy="15.7" r="1.5" fill="currentColor" stroke="none"/><circle cx="15.7" cy="15.7" r="1.5" fill="currentColor" stroke="none"/>
+          </svg>
+          Generate sorted list
+        </button>
+      </div>
+    </div>
+    <div class="config-msg" id="configMsg" hidden></div>
+  </section>
+
+  <!-- ======================= LIVE TRACE STAGE ======================= -->
+  <section class="card" aria-label="Algorithm visualisation">
+    <div class="card-head">
+      <div class="card-title">Live trace</div>
+      <span class="target-chip" id="targetChip">target roll no. = 146</span>
+    </div>
+
+    <div class="stage-wrap">
+      <div class="lane-labels" aria-hidden="true">
+        <span class="ll-low">low</span><span class="ll-mid">mid</span><span class="ll-high">high</span>
+      </div>
+      <div class="stage-scroll" id="stageScroll">
+        <div class="stage-inner" id="stageInner">
+          <!-- shrinking active-window rectangle (behind the cells) -->
+          <div class="window off" id="winEl" aria-hidden="true"></div>
+          <!-- three pointer lanes: tracks + sliding index markers -->
+          <div class="lanes" id="lanes" aria-hidden="true">
+            <div class="track t1"></div><div class="track t2"></div><div class="track t3"></div>
+            <div class="marker m-low hidden" id="mkLow"><span class="mpill"><span class="mv">0</span></span></div>
+            <div class="marker m-mid hidden" id="mkMid"><span class="mpill"><span class="mv">0</span></span></div>
+            <div class="marker m-high hidden" id="mkHigh"><span class="mpill"><span class="mv">0</span></span></div>
+          </div>
+          <!-- the array itself (cells are rebuilt per dataset) -->
+          <div class="cells" id="cells"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="transport">
+      <div class="t-buttons">
+        <button class="ibtn" id="btnReset" title="Reset (R)" aria-label="Reset to the first step">
+          <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+        </button>
+        <button class="ibtn" id="btnPrev" title="Previous step (Left arrow)" aria-label="Previous step">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><polygon points="6 4 16 12 6 20"/><rect x="1.4" y="4" width="2.6" height="16" rx="1.2"/></svg>
+        </button>
+        <button class="ibtn primary" id="btnPlay" title="Play auto-run (Space)" aria-label="Play auto-run">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><polygon points="7 4.5 20 12 7 19.5"/></svg>
+        </button>
+        <button class="ibtn" id="btnNext" title="Next step (Right arrow)" aria-label="Next step">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><polygon points="18 4 8 12 18 20"/><rect x="20" y="4" width="2.6" height="16" rx="1.2"/></svg>
+        </button>
+      </div>
+      <div class="t-speed">
+        <label for="speed">Speed</label>
+        <input type="range" id="speed" min="0.25" max="3" step="0.25" value="1">
+        <span class="mono" id="speedVal">1&times;</span>
+      </div>
+      <div class="t-progress">
+        <span class="mono" id="stepNum">01 / 01</span>
+        <div class="pbar"><div id="pfill"></div></div>
+      </div>
+      <span class="kbd-hint">keyboard: <kbd>&larr;</kbd> <kbd>&rarr;</kbd> step &middot; <kbd>space</kbd> play / pause &middot; <kbd>R</kbd> reset</span>
+    </div>
+
+    <div class="explain" aria-live="polite">
+      <span class="step-badge" id="stepBadge">Start</span>
+      <p id="explainText">Press &ldquo;Load &amp; trace&rdquo; to begin.</p>
+    </div>
+  </section>
+
+  <!-- ======================= PANEL GRID ======================= -->
+  <div class="grid">
+
+    <!-- pseudocode -->
+    <section class="card g-code" aria-label="Pseudocode">
+      <div class="card-head"><div class="card-title">Pseudocode &mdash; recursive version</div></div>
+      <div class="code" id="code"></div>
+      <p class="code-note">The highlighted line is the line being executed by the current step. Line numbers are referenced by the call-stack panel. <code>data[]</code> here is the sorted roll-number list.</p>
+    </section>
+
+    <!-- call stack -->
+    <section class="card g-stack" aria-label="Recursion call stack">
+      <div class="card-head">
+        <div class="card-title">Recursion call stack</div>
+        <span style="display:flex;gap:8px;align-items:center">
+          <span class="chip ret-chip" id="retChip" hidden>returns 5</span>
+          <span class="chip mono" id="stackDepth">depth 0</span>
+        </span>
+      </div>
+      <div class="stack-list" id="stackList"></div>
+      <p class="footnote">Each <code>return binarySearch(&hellip;)</code> pushes a frame; each return pops one. Maximum depth is <code>&lfloor;log&#8322; n&rfloor; + 1</code> &mdash; that is the <code>O(log n)</code> space cost of the recursive version (an iterative loop would use <code>O(1)</code>).</p>
+    </section>
+
+    <!-- stats -->
+    <section class="card g-stats" aria-label="Statistics">
+      <div class="card-head"><div class="card-title">Statistics</div></div>
+      <div class="stats-grid">
+        <div class="stat"><div class="sl">Comparisons</div><div class="sv" id="stCmp">0</div><div class="sx" id="stCmpSub">of &le; 4 worst case</div></div>
+        <div class="stat"><div class="sl">Active window</div><div class="sv" id="stRange">10</div><div class="sx mono" id="stTrail">10</div></div>
+        <div class="stat"><div class="sl">Stack depth</div><div class="sv" id="stDepth">0</div><div class="sx">frames &middot; O(log n)</div></div>
+        <div class="stat"><div class="sl">Roll numbers n</div><div class="sv" id="stN">10</div><div class="sx">students in list</div></div>
+      </div>
+      <p class="footnote">One &ldquo;comparison&rdquo; = one evaluation of <code>data[mid]</code> against the target roll number (the three-way test on lines 4, 5 and 7) &mdash; the standard DAA counting, so the default example totals exactly 3.</p>
+    </section>
+
+    <!-- binary vs linear -->
+    <section class="card g-chart" aria-label="Binary versus linear search">
+      <div class="card-head">
+        <div class="card-title">Binary vs linear search</div>
+        <button class="btn sm" id="btnJump" title="Jump straight to the final step">
+          skip to result
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="12" x2="19" y2="12"/><polyline points="13 6 19 12 13 18"/></svg>
+        </button>
+      </div>
+      <div class="chart">
+        <div class="chart-row">
+          <span class="clab">Binary</span>
+          <div class="cbar"><div class="fill bin" id="fillBin"></div></div>
+          <span class="cnum" id="numBin">&ndash;</span>
+        </div>
+        <div class="chart-row">
+          <span class="clab">Linear</span>
+          <div class="cbar"><div class="fill lin" id="fillLin"></div></div>
+          <span class="cnum" id="numLin">&ndash;</span>
+        </div>
+      </div>
+      <p class="chart-ph" id="chartPh">Computed on the same roll-number list &mdash; revealed at the final step so it never interrupts the animation.</p>
+      <p class="chart-verdict" id="chartVerdict" hidden></p>
+    </section>
+
+    <!-- complexity -->
+    <section class="card g-cx" aria-label="Complexity analysis">
+      <div class="card-head"><div class="card-title">Complexity</div></div>
+      <div class="cx-row">
+        <span class="cx-k">Best</span>
+        <span class="cx-v"><code>O(1)</code><em>the very first mid probed is already the target roll number</em></span>
+      </div>
+      <div class="cx-row">
+        <span class="cx-k">Average / Worst</span>
+        <span class="cx-v"><code>O(log n)</code><em>at most &lfloor;log&#8322; n&rfloor; + 1 comparisons</em></span>
+      </div>
+      <div class="cx-row">
+        <span class="cx-k">Recurrence</span>
+        <span class="cx-v"><code>T(n) = T(n/2) + O(1)</code><em>Master theorem: a = 1, b = 2, f(n) = O(1) &rArr; &Theta;(log n)</em></span>
+      </div>
+      <div class="cx-row">
+        <span class="cx-k">Space</span>
+        <span class="cx-v"><code>O(log n)</code><em>recursive &mdash; one stack frame per halving &middot; <code>O(1)</code> iterative</em></span>
+      </div>
+      <div class="cx-row">
+        <span class="cx-k">Why halving?</span>
+        <span class="cx-v"><em>every comparison permanently discards half of the remaining students: n &rarr; n/2 &rarr; n/4 &rarr; &hellip; &rarr; 1, which takes log&#8322; n rounds</em></span>
+      </div>
+    </section>
+  </div>
+</main>
+
+<footer>Binary Search Simulator &middot; Student Roll Number Lookup &middot; single file, no libraries, runs fully offline in your browser &middot; DAA CIA 3(b)</footer>
+
+<script>
+'use strict';
+/* ============================================================================
+   BINARY SEARCH SIMULATOR — organisation (for the viva demo)
+   1. Constants & helpers
+   2. ALGORITHM ENGINE  — pure logic, zero DOM (the assignment's recursive
+      algorithm instrumented to record a snapshot after every micro-step)
+   3. RENDERING         — turns one snapshot into DOM state
+   4. CONTROLLER        — step index, play/pause timer, speed, keyboard
+   5. INPUT HANDLING    — parsing, validation, presets, random generation
+   6. THEME + INIT
+   ============================================================================ */
+
+/* ---------------------------------------------------------------------------
+   1. CONSTANTS & HELPERS
+   --------------------------------------------------------------------------- */
+/* Default dataset is framed as a sorted list of student roll numbers, since
+   the real-world scenario for this simulator is: "find a student's roll
+   number in a college database without scanning every record." */
+const DEFAULT_ARRAY = [101, 108, 115, 122, 130, 146, 158, 167, 179, 190];
+const DEFAULT_TARGET = 146;
+const BASE_DELAY = 1300;              // ms per step at speed 1x
+
+/* The pseudocode shown in the panel (split across lines so it fits).
+   L_* constants are the DISPLAYED (1-based) line numbers used everywhere. */
+const CODE_LINES = [
+  'int binarySearch(data[], low, high, target)',      // 1
+  '    mid = (low + high) / 2',                       // 2
+  '    if (high >= low)',                             // 3
+  '        if (data[mid] == target) return mid',      // 4
+  '        if (data[mid] > target)',                  // 5
+  '            return binarySearch(data, low, mid-1, target)',   // 6
+  '        if (data[mid] < target)',                  // 7
+  '            return binarySearch(data, mid+1, high, target)',  // 8
+  '    return -1'                                     // 9
+];
+const L_SIG = 1, L_MID = 2, L_GUARD = 3, L_EQ = 4,
+      L_GT = 5, L_CALL_L = 6, L_LT = 7, L_CALL_R = 8, L_RET1 = 9;
+
+const SVG_PLAY  = '<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><polygon points="7 4.5 20 12 7 19.5"/></svg>';
+const SVG_PAUSE = '<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><rect x="6" y="4.5" width="4.4" height="15" rx="1.2"/><rect x="13.6" y="4.5" width="4.4" height="15" rx="1.2"/></svg>';
+const SVG_WARN  = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.2 2.4 20.5h19.2L12 3.2z"/><line x1="12" y1="10" x2="12" y2="14.5" stroke-linecap="round"/><circle cx="12" cy="17.3" r="1.1" fill="currentColor" stroke="none"/></svg>';
+const SVG_SORT  = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5v13"/><polyline points="7 11.5 12 16.5 17 11.5"/><line x1="5" y1="20.5" x2="19" y2="20.5"/></svg>';
+
+const pl = (k) => (k === 1 ? '' : 's');            // plural helper
+const fs = (v) => (v < 0 ? '(' + v + ')' : String(v)); // wrap negatives in formulas
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+/* DOM shortcuts */
+const $ = (id) => document.getElementById(id);
+const els = {
+  themeBtn: $('themeBtn'),
+  arrInput: $('arrInput'), targetInput: $('targetInput'), btnLoad: $('btnLoad'),
+  sizeSel: $('sizeSel'), btnRandom: $('btnRandom'), configMsg: $('configMsg'),
+  targetChip: $('targetChip'),
+  stageInner: $('stageInner'), stageScroll: $('stageScroll'), lanes: $('lanes'), cells: $('cells'),
+  winEl: $('winEl'), mkLow: $('mkLow'), mkMid: $('mkMid'), mkHigh: $('mkHigh'),
+  btnReset: $('btnReset'), btnPrev: $('btnPrev'), btnPlay: $('btnPlay'), btnNext: $('btnNext'),
+  speed: $('speed'), speedVal: $('speedVal'), stepNum: $('stepNum'), pfill: $('pfill'),
+  stepBadge: $('stepBadge'), explainText: $('explainText'),
+  code: $('code'), stackList: $('stackList'), stackDepth: $('stackDepth'), retChip: $('retChip'),
+  stCmp: $('stCmp'), stCmpSub: $('stCmpSub'), stRange: $('stRange'), stTrail: $('stTrail'),
+  stDepth: $('stDepth'), stN: $('stN'),
+  fillBin: $('fillBin'), fillLin: $('fillLin'), numBin: $('numBin'), numLin: $('numLin'),
+  chartPh: $('chartPh'), chartVerdict: $('chartVerdict'), btnJump: $('btnJump')
+};
+
+/* Mutable application state (single source of truth for the controller). */
+const ctrl = {
+  data: [], target: 0,
+  steps: [],            // precomputed snapshots (makes Previous trivial)
+  idx: 0,
+  playing: false, timer: null, speed: 1,
+  cellEls: [], codeLines: [],
+  maxCmp: 0, prevDepth: 0, curStep: null
+};
+
+/* ---------------------------------------------------------------------------
+   2. ALGORITHM ENGINE — pure functions, no DOM access at all.
+      This is the exact recursive algorithm from the assignment, instrumented:
+      every point where the pseudocode advances gets a full state snapshot.
+   --------------------------------------------------------------------------- */
+
+/** Comparisons a linear search would need for `target` in `data`.
+ *  Used ONLY for the final chart — it never slows the animation. */
+function linearSearchComparisons(data, target) {
+  for (let i = 0; i < data.length; i++) if (data[i] === target) return i + 1;
+  return data.length;              // scanned everything: not found
+}
+
+/** buildSteps(data, target) -> array of snapshots.
+ *  Mirrors the pseudocode line by line:
+ *    mid = (low+high)/2 ; if (high>=low) { ==, >, < branches } ; return -1
+ *  A snapshot contains EVERYTHING the renderer needs (pointers, eliminated
+ *  mask, call stack, comparison count, highlighted line, message), so any
+ *  step can be shown instantly in any order (Next / Previous / jump). */
+function buildSteps(data, target) {
+  const n = data.length;
+  const steps = [];
+  const eliminated = new Array(n).fill(false); // indices discarded so far
+  const sizeTrail = [n];                       // window sizes: n, n/2, n/4...
+  let comparisons = 0;                         // data[mid] vs target probes
+  let foundIndex = null;                       // sticky once found
+  const stack = [];                            // simulated recursion frames
+  const maxCmp = Math.floor(Math.log2(n)) + 1;
+  const linearCmp = linearSearchComparisons(data, target);
+  const t = String(target);
+
+  /** Snapshot of the complete state (deep-copied so history is immutable). */
+  function snap(o) {
+    steps.push(Object.assign({
+      low: null, high: null, mid: null,
+      showL: false, showH: false, showMid: false,
+      eliminated: eliminated.slice(),
+      stack: stack.map(f => ({ low: f.low, high: f.high, mid: f.mid,
+                               status: f.status, waitLine: f.waitLine, retVal: f.retVal })),
+      comparisons, codeLine: -1, title: '', message: '',
+      retVal: null, foundIndex, result: null,
+      sizeTrail: sizeTrail.slice(),
+      activeCount: eliminated.reduce((a, e) => a + (e ? 0 : 1), 0)
+    }, o));
+  }
+
+  /** Snapshot for the moment a frame returns `r` and gets popped. */
+  function popStep(frame, r, line) {
+    stack.pop();
+    const parent = stack[stack.length - 1];
+    snap({
+      type: 'pop', low: frame.low, high: frame.high, mid: frame.mid,
+      showL: true, showH: true, showMid: false,
+      codeLine: line, title: 'Return', retVal: r,
+      message: parent
+        ? 'binarySearch(' + frame.low + ', ' + frame.high + ') returns ' + r +
+          ' and its frame is popped — stack depth is now ' + stack.length +
+          '. The value ' + r + ' propagates up to binarySearch(' + parent.low + ', ' +
+          parent.high + ') (waiting at line ' + parent.waitLine + '), which returns it immediately.'
+        : 'binarySearch(' + frame.low + ', ' + frame.high + ') returns ' + r +
+          ' to the original caller — the call stack is empty. The final answer is ' + r + '.'
+    });
+  }
+
+  /* ---- Step 0: introduction ------------------------------------------- */
+  snap({
+    type: 'init', title: 'Sorted input',
+    message: 'The list of roll numbers is sorted in ascending order — the one precondition binary search has. ' +
+             'n = ' + n + ' students, target roll no. = ' + t + '. Best case: 1 comparison. ' +
+             'Worst case: \u230Alog\u2082 ' + n + '\u230B + 1 = ' + maxCmp +
+             '. Step through with Next (\u2192) or press Play.'
+  });
+
+  /** trace(low, high, via) — one recursive call, recorded step by step.
+   *  `via` = displayed line number that created this call (L_SIG for the root).
+   *  Returns the found index or -1, exactly like the real function. */
+  function trace(low, high, via) {
+    stack.push({ low, high, mid: null, status: 'active', waitLine: null, retVal: null });
+    const me = stack[stack.length - 1];
+    const mid = Math.trunc((low + high) / 2);   // integer division, like C
+    const valid = high >= low;                  // the `if (high >= low)` guard
+
+    /* the call itself */
+    snap({
+      type: 'call', low, high, showL: true, showH: true,
+      codeLine: via === L_SIG ? L_SIG : via,
+      title: via === L_SIG ? 'Initial call' : 'Recursive call',
+      message: via === L_SIG
+        ? 'Initial call: binarySearch(data, low = 0, high = ' + (n - 1) + ', target = ' + t +
+          '). low and high mark the ends of the active window — right now, the entire roll-number list.'
+        : 'Line ' + via + ': return binarySearch(data, low = ' + low + ', high = ' + high +
+          ', target = ' + t + ') — one new frame is pushed onto the stack (depth ' + stack.length +
+          '). The active window is now [' + low + '..' + high + '], ' + (high - low + 1) +
+          ' student' + pl(high - low + 1) + '.'
+    });
+
+    /* line 2: mid = (low + high) / 2 */
+    me.mid = mid;
+    snap({
+      type: 'mid', low, high, mid, showL: true, showH: true, showMid: valid,
+      codeLine: L_MID, title: 'Compute mid',
+      message: valid
+        ? 'mid = (low + high) / 2 = (' + fs(low) + ' + ' + fs(high) + ') / 2 = ' + mid +
+          ' (integer division). The record under scrutiny is data[' + mid + '] = roll no. ' + data[mid] + '.'
+        : 'mid = (low + high) / 2 = (' + fs(low) + ' + ' + fs(high) + ') / 2 = ' + mid +
+          '. This version computes mid before checking the range, but with low > high the window is empty — the value will never be used.'
+    });
+
+    /* line 3: if (high >= low) */
+    if (!valid) {
+      snap({
+        type: 'guard-fail', low, high, mid, showL: true, showH: true,
+        codeLine: L_GUARD, title: 'Range check fails',
+        message: 'if (high >= low) \u2192 ' + high + ' >= ' + low + ' is false: low has crossed high, ' +
+                 'so the window is empty. No remaining record can be the target roll number — the search must fail.'
+      });
+      me.status = 'returning'; me.retVal = -1;
+      snap({
+        type: 'return-1', low, high, mid, showL: true, showH: true,
+        codeLine: L_RET1, title: 'return -1', retVal: -1,
+        message: 'return -1. binarySearch(' + low + ', ' + high + ') answers \u201Croll no. ' + t +
+                 ' not found\u201D, and the -1 now travels back up through every waiting frame.'
+      });
+      popStep(me, -1, L_RET1);
+      return -1;
+    }
+    snap({
+      type: 'guard', low, high, mid, showL: true, showH: true, showMid: true,
+      codeLine: L_GUARD, title: 'Range check',
+      message: 'if (high >= low) \u2192 ' + high + ' >= ' + low + ' holds. The window [' + low + '..' +
+               high + '] contains ' + (high - low + 1) + ' candidate' + pl(high - low + 1) +
+               ' — the comparison may proceed.'
+    });
+
+    /* line 4: if (data[mid] == target) — this is ONE counted comparison */
+    comparisons++;
+    const v = data[mid];
+    if (v === target) {
+      foundIndex = mid;
+      me.status = 'returning'; me.retVal = mid;
+      snap({
+        type: 'found', low, high, mid, showL: true, showH: true, showMid: true,
+        codeLine: L_EQ, title: 'Found!', foundIndex: mid, retVal: mid,
+        message: 'Comparison #' + comparisons + ': data[' + mid + '] = ' + v + ' — is roll no. ' + v +
+                 ' == ' + t + '? Yes! Exact match at index ' + mid +
+                 ', so the call returns ' + mid + ' and the recursion unwinds.'
+      });
+      popStep(me, mid, L_EQ);
+      return mid;
+    }
+    snap({
+      type: 'compare', low, high, mid, showL: true, showH: true, showMid: true,
+      codeLine: L_EQ, title: 'Compare \u2260',
+      message: 'Comparison #' + comparisons + ': data[' + mid + '] = ' + v + ' — is roll no. ' + v + ' == ' +
+               t + '? No, they differ. The middle record is not the target, so exactly one half survives.'
+    });
+
+    /* lines 5/7: which half? then eliminate + recurse (lines 6/8) */
+    const goLeft = v > target;
+    const condLine = goLeft ? L_GT : L_LT;
+    const callLine = goLeft ? L_CALL_L : L_CALL_R;
+    const newLow = goLeft ? low : mid + 1;
+    const newHigh = goLeft ? mid - 1 : high;
+
+    snap({
+      type: 'direction', low, high, mid, showL: true, showH: true, showMid: true,
+      codeLine: condLine, title: goLeft ? 'Go left' : 'Go right',
+      message: goLeft
+        ? 'if (data[mid] > target) \u2192 ' + v + ' > ' + t + ': true. In a sorted list everything right of index ' +
+          mid + ' is \u2265 ' + v + ', so it is all too big: the target roll no. can only be in [' + low + '..' + (mid - 1) + '].'
+        : 'if (data[mid] > target) \u2192 ' + v + ' > ' + t + ': no, ' + v + ' < ' + t +
+          '. In a sorted list everything left of index ' + mid + ' is \u2264 ' + v +
+          ', so it is all too small: the target roll no. can only be in [' + (mid + 1) + '..' + high + '].'
+    });
+
+    /* eliminate the impossible half (mid itself is already known to differ) */
+    const from = goLeft ? mid : low;
+    const to = goLeft ? high : mid;
+    for (let i = from; i <= to; i++) eliminated[i] = true;
+    const kept = newHigh - newLow + 1;
+    sizeTrail.push(kept);
+    snap({
+      type: 'eliminate', low, high, mid, showL: true, showH: true, showMid: false,
+      codeLine: callLine, title: goLeft ? 'Eliminate the right half' : 'Eliminate the left half',
+      message: 'Half eliminated: indices ' + from + '..' + to + ' (' + (to - from + 1) + ' student' +
+               pl(to - from + 1) + ') go dark — none of them can be the target. The surviving window is [' +
+               newLow + '..' + newHigh + '] with ' + kept + ' student' + pl(kept) +
+               '. That is the entire remaining search space.'
+    });
+
+    me.status = 'waiting'; me.waitLine = callLine;
+    const r = trace(newLow, newHigh, callLine);   // ← the recursive call
+    popStep(me, r, callLine);                     // tail-return r, pop own frame
+    return r;
+  }
+
+  const result = trace(0, n - 1, L_SIG);
+
+  /* ---- final step ------------------------------------------------------ */
+  snap({
+    type: 'final',
+    showL: false, showH: false, showMid: false,
+    codeLine: result === -1 ? L_RET1 : L_EQ,
+    title: result === -1 ? 'Result — not found' : 'Result — found at index ' + result,
+    result: { found: result !== -1, index: result, comparisons, linearCmp, maxCmp },
+    message: result !== -1
+      ? 'Result: roll no. ' + t + ' was FOUND at index ' + result + ' after ' + comparisons +
+        ' comparison' + pl(comparisons) + ' (worst case for n = ' + n + ' students is ' + maxCmp +
+        '). On the same list, linear search would need ' + linearCmp + ' comparison' + pl(linearCmp) + '.'
+      : 'Result: roll no. ' + t + ' is NOT present in the list. After ' + comparisons + ' comparison' + pl(comparisons) +
+        ' the window shrank to nothing (low > high) and every frame returned -1. Linear search would also ' +
+        'say \u201Cnot found\u201D — but only after examining all ' + linearCmp + ' records.'
+  });
+
+  return steps;
+}
+
+/* ---------------------------------------------------------------------------
+   3. RENDERING — every function takes a snapshot and updates the DOM.
+   --------------------------------------------------------------------------- */
+
+/** Build the array cells once per dataset (boxes + index labels + strips). */
+function buildCells(data) {
+  els.cells.innerHTML = '';
+  ctrl.cellEls = data.map(function (v) {
+    const cell = document.createElement('div');
+    cell.className = 'cell';
+    cell.innerHTML =
+      '<div class="box">' +
+        '<i class="strip s-low"></i><i class="strip s-mid"></i><i class="strip s-high"></i>' +
+        '<span class="val">' + escapeHtml(String(v)) + '</span>' +
+      '</div>' +
+      '<span class="idx"></span>';
+    els.cells.appendChild(cell);
+    return cell;
+  });
+  ctrl.cellEls.forEach(function (cell, i) {
+    cell.querySelector('.idx').textContent = i;
+  });
+}
+
+/** Choose a box width that fits the viewport (scrolls horizontally if tiny). */
+function sizeCells() {
+  const n = ctrl.data.length;
+  if (!n) return;
+  const gap = 8;
+  const avail = els.stageScroll.clientWidth - 16;
+  let w = Math.floor((avail - (n - 1) * gap) / n);
+  w = Math.max(28, Math.min(72, w));
+  els.stageInner.style.setProperty('--cellw', w + 'px');
+}
+
+/** x-centre of cell i, clamped to the array so out-of-range pointers
+ *  (high = -1, low = n) still park at the correct edge. */
+function markerX(i) {
+  const c = ctrl.cellEls[Math.max(0, Math.min(ctrl.cellEls.length - 1, i))];
+  return c ? c.offsetLeft + c.offsetWidth / 2 : 0;
+}
+
+/** Move/hide one pointer pill. Reappearing pills jump into place (no slide). */
+function placeMarker(el, idx, visible) {
+  if (visible && idx !== null && idx !== undefined) {
+    el.querySelector('.mv').textContent = idx;
+    const x = markerX(idx);
+    const wasHidden = el.classList.contains('hidden');
+    if (wasHidden) {
+      el.classList.add('snapx');
+      el.style.left = x + 'px';
+      void el.offsetWidth;                    // force reflow before re-enabling transitions
+      el.classList.remove('snapx');
+    } else {
+      el.style.left = x + 'px';
+    }
+    el.classList.remove('hidden');
+  } else {
+    el.classList.add('hidden');
+  }
+}
+
+function positionMarkers(s) {
+  placeMarker(els.mkLow, s.low, s.showL);
+  placeMarker(els.mkMid, s.mid, s.showMid);
+  placeMarker(els.mkHigh, s.high, s.showH);
+}
+
+/** Dashed rectangle framing the active window [low..high] (halving animation). */
+function renderWindow(s) {
+  const w = els.winEl;
+  const inRange = s.showL && s.showH && s.low !== null && s.high !== null &&
+                  s.low <= s.high && s.low < ctrl.data.length && s.high >= 0;
+  if (!inRange) { w.classList.add('off'); return; }
+  w.classList.remove('off');
+  const a = ctrl.cellEls[s.low], b = ctrl.cellEls[s.high];
+  const left = a.offsetLeft - 5;
+  w.style.left = left + 'px';
+  w.style.width = (b.offsetLeft + b.offsetWidth - left + 5) + 'px';
+  w.style.top = (els.cells.offsetTop - 7) + 'px';
+  w.style.height = (els.cells.offsetHeight + 11) + 'px';
+}
+
+/** Box classes: eliminated / mid / found / pointer strips. */
+function renderCells(s) {
+  ctrl.cellEls.forEach(function (cell, i) {
+    cell.classList.toggle('elim', !!s.eliminated[i]);
+    cell.classList.toggle('mid', !!(s.showMid && i === s.mid && s.foundIndex === null));
+    cell.classList.toggle('found', s.foundIndex === i);
+    cell.classList.toggle('has-low', !!(s.showL && i === s.low));
+    cell.classList.toggle('has-mid', !!(s.showMid && i === s.mid));
+    cell.classList.toggle('has-high', !!(s.showH && i === s.high));
+  });
+}
+
+/** Build the pseudocode panel once. */
+function buildCodePanel() {
+  els.code.innerHTML = CODE_LINES.map(function (txt, i) {
+    return '<div class="cl"><span class="ln">' + (i + 1) + '</span><span class="cd">' +
+           escapeHtml(txt) + '</span></div>';
+  }).join('');
+  ctrl.codeLines = Array.prototype.slice.call(els.code.querySelectorAll('.cl'));
+}
+function renderCode(line) {
+  ctrl.codeLines.forEach(function (el, i) { el.classList.toggle('on', i + 1 === line); });
+}
+
+/** Call-stack frames, newest first, with push-in animation for new frames. */
+function renderStack(s) {
+  const depth = s.stack.length;
+  els.stackDepth.textContent = 'depth ' + depth;
+  if (s.retVal !== null && s.retVal !== undefined) {
+    els.retChip.hidden = false;
+    els.retChip.textContent = 'returns ' + s.retVal;
+    els.retChip.classList.toggle('neg', s.retVal === -1);
+  } else {
+    els.retChip.hidden = true;
+  }
+  if (!depth) {
+    els.stackList.innerHTML = '<div class="stack-empty">stack is empty — nothing is running yet</div>';
+    ctrl.prevDepth = 0;
+    return;
+  }
+  const newCount = Math.max(0, depth - ctrl.prevDepth);
+  els.stackList.innerHTML = s.stack.map(function (f, i) {
+    const pos = depth - 1 - i;                    // 0 = oldest frame
+    let chip;
+    if (f.status === 'returning') {
+      chip = '<span class="fchip ret' + (f.retVal === -1 ? ' neg' : '') + '">returns ' + f.retVal + '</span>';
+    } else if (f.status === 'waiting') {
+      chip = '<span class="fchip wait">waiting \u00B7 line ' + f.waitLine + '</span>';
+    } else {
+      chip = '<span class="fchip run">running</span>';
+    }
+    const meta = (f.mid !== null && f.mid !== undefined) ? '<span class="fmeta">mid = ' + f.mid + '</span>' : '';
+    const enter = (pos >= depth - newCount) ? ' enter' : '';
+    return '<div class="frame' + enter + '">' + chip +
+           '<code>binarySearch(' + f.low + ', ' + f.high + ')</code>' + meta + '</div>';
+  }).join('');
+  ctrl.prevDepth = depth;
+}
+
+/** Stats: comparisons, active window (+ trail), stack depth, n. */
+function renderStats(s) {
+  els.stCmp.textContent = s.comparisons;
+  els.stCmpSub.textContent = 'of \u2264 ' + ctrl.maxCmp + ' worst case';
+  els.stRange.textContent = s.activeCount;
+  els.stTrail.textContent = s.sizeTrail.join(' \u2192 ');
+  els.stDepth.textContent = s.stack.length;
+  els.stN.textContent = ctrl.data.length;
+}
+
+/** Binary-vs-linear bars — only populated on the final step. */
+function renderChart(s) {
+  const r = s.result;
+  if (!r) {
+    els.fillBin.style.width = '0%'; els.fillLin.style.width = '0%';
+    els.numBin.textContent = '\u2013'; els.numLin.textContent = '\u2013';
+    els.chartPh.hidden = false; els.chartVerdict.hidden = true;
+    return;
+  }
+  els.chartPh.hidden = true; els.chartVerdict.hidden = false;
+  const b = r.comparisons, l = r.linearCmp, mx = Math.max(b, l, 1);
+  els.fillBin.style.width = (b / mx * 100) + '%';
+  els.fillLin.style.width = (l / mx * 100) + '%';
+  els.numBin.textContent = b; els.numLin.textContent = l;
+  let v;
+  if (b < l) {
+    const ratio = l / b;
+    const rs = (ratio >= 10 ? Math.round(ratio) : Math.round(ratio * 10) / 10) + '\u00D7';
+    v = 'Binary search needed ' + b + ' comparison' + pl(b) + ' against linear search\u2019s ' + l +
+        ' — ' + rs + ' fewer. The gap widens as the student list grows (log\u2082 n versus n).';
+  } else if (b === l) {
+    v = 'A tie: both took ' + b + ' comparison' + pl(b) +
+        '. Tiny lists (or lucky middles) can favour linear search — but binary\u2019s worst case grows as log\u2082 n while linear\u2019s grows as n.';
+  } else {
+    v = 'Linear search won this time (' + l + ' vs ' + b +
+        ') — the target sat near the front. For large student lists, binary search\u2019s log\u2082 n bound wins overwhelmingly.';
+  }
+  els.chartVerdict.textContent = v;
+}
+
+/** Explanation strip: step badge + plain-English sentence. */
+function renderExplain(s) {
+  els.stepBadge.textContent = s.title;
+  let cls = '';
+  if (s.type === 'found' || (s.type === 'final' && s.result && s.result.found)) cls = 'b-good';
+  else if (s.type === 'guard-fail' || s.type === 'return-1' ||
+           (s.type === 'final' && s.result && !s.result.found)) cls = 'b-bad';
+  else if (s.type === 'direction' || s.type === 'eliminate') cls = 'b-cut';
+  els.stepBadge.className = 'step-badge ' + cls;
+  els.explainText.textContent = s.message;
+  if (s.type === 'final') els.targetChip.classList.toggle('miss', !(s.result && s.result.found));
+}
+
+/** Keep the active window in view while auto-playing wide arrays. */
+function autoScroll(s) {
+  if (!ctrl.playing || s.mid === null || s.mid === undefined) return;
+  const sc = els.stageScroll;
+  if (sc.scrollWidth <= sc.clientWidth + 4) return;
+  const c = ctrl.cellEls[Math.max(0, Math.min(ctrl.data.length - 1, s.mid))];
+  if (!c) return;
+  const cx = c.offsetLeft + c.offsetWidth / 2;
+  sc.scrollTo({ left: Math.max(0, cx - sc.clientWidth / 2), behavior: 'smooth' });
+}
+
+/** Master render: one snapshot -> the whole UI. Pure with respect to steps. */
+function renderStep(s) {
+  ctrl.curStep = s;
+  renderCells(s);
+  renderWindow(s);
+  positionMarkers(s);
+  renderCode(s.codeLine);
+  renderStack(s);
+  renderStats(s);
+  renderChart(s);
+  renderExplain(s);
+  updateTransport();
+  autoScroll(s);
+}
+
+/* ---------------------------------------------------------------------------
+   4. ANIMATION CONTROLLER — index into the precomputed snapshot list.
+   --------------------------------------------------------------------------- */
+
+/** Load a dataset: (re)build cells, precompute all steps, show step 0. */
+function loadDataset(data, target) {
+  pause();
+  ctrl.data = data;
+  ctrl.target = target;
+  ctrl.maxCmp = Math.floor(Math.log2(data.length)) + 1;
+  ctrl.steps = buildSteps(data, target);
+  ctrl.idx = 0;
+  ctrl.prevDepth = 0;
+  ctrl.curStep = null;
+  els.targetChip.textContent = 'target roll no. = ' + target;
+  els.targetChip.classList.remove('miss');
+  buildCells(data);
+  sizeCells();
+  els.lanes.classList.add('snap');               // no slide-in from old positions
+  requestAnimationFrame(function () {
+    requestAnimationFrame(function () { els.lanes.classList.remove('snap'); });
+  });
+  renderStep(ctrl.steps[0]);
+}
+
+function goTo(i) {
+  if (!ctrl.steps.length) return;
+  ctrl.idx = Math.max(0, Math.min(ctrl.steps.length - 1, i));
+  renderStep(ctrl.steps[ctrl.idx]);
+}
+
+function play() {
+  if (ctrl.idx >= ctrl.steps.length - 1) goTo(0); // replay from the start
+  ctrl.playing = true;
+  updatePlayBtn();
+  schedule();
+}
+function pause() {
+  ctrl.playing = false;
+  clearTimeout(ctrl.timer);
+  updatePlayBtn();
+}
+function togglePlay() { ctrl.playing ? pause() : play(); }
+function reset() { pause(); goTo(0); }
+
+/** One tick of auto-run: advance, then re-arm the timer with current speed. */
+function schedule() {
+  clearTimeout(ctrl.timer);
+  ctrl.timer = setTimeout(function () {
+    if (!ctrl.playing) return;
+    if (ctrl.idx < ctrl.steps.length - 1) { goTo(ctrl.idx + 1); schedule(); }
+    else pause();
+  }, BASE_DELAY / ctrl.speed);
+}
+
+function updatePlayBtn() {
+  els.btnPlay.innerHTML = ctrl.playing ? SVG_PAUSE : SVG_PLAY;
+  const label = ctrl.playing ? 'Pause auto-run (Space)' : 'Play auto-run (Space)';
+  els.btnPlay.title = label;
+  els.btnPlay.setAttribute('aria-label', label);
+}
+
+function updateTransport() {
+  const total = ctrl.steps.length;
+  els.stepNum.textContent =
+    String(ctrl.idx + 1).padStart(2, '0') + ' / ' + String(Math.max(total, 1)).padStart(2, '0');
+  els.pfill.style.width = (total ? (ctrl.idx + 1) / total * 100 : 0) + '%';
+  els.btnPrev.disabled = ctrl.idx <= 0;
+  els.btnNext.disabled = ctrl.idx >= total - 1;
+}
+
+/* transport wiring */
+els.btnNext.addEventListener('click', function () { pause(); goTo(ctrl.idx + 1); });
+els.btnPrev.addEventListener('click', function () { pause(); goTo(ctrl.idx - 1); });
+els.btnPlay.addEventListener('click', togglePlay);
+els.btnReset.addEventListener('click', reset);
+els.btnJump.addEventListener('click', function () { pause(); goTo(ctrl.steps.length - 1); });
+els.speed.addEventListener('input', function () {
+  ctrl.speed = Number(els.speed.value);
+  els.speedVal.textContent = ctrl.speed + '\u00D7';
+  if (ctrl.playing) schedule();                  // re-time the pending tick
+});
+
+/* keyboard shortcuts: ← previous, → next, Space play/pause, R reset */
+document.addEventListener('keydown', function (e) {
+  const tag = (e.target.tagName || '').toLowerCase();
+  if (tag === 'input' || tag === 'select' || tag === 'textarea') return;
+  if (e.key === 'ArrowRight') { e.preventDefault(); pause(); goTo(ctrl.idx + 1); }
+  else if (e.key === 'ArrowLeft') { e.preventDefault(); pause(); goTo(ctrl.idx - 1); }
+  else if (e.key === ' ') { if (tag !== 'button') { e.preventDefault(); togglePlay(); } }
+  else if (e.key === 'r' || e.key === 'R') { reset(); }
+});
+
+/* re-layout on resize: resize boxes, then re-place markers + window */
+let rzTimer;
+window.addEventListener('resize', function () {
+  clearTimeout(rzTimer);
+  rzTimer = setTimeout(function () {
+    sizeCells();
+    if (ctrl.curStep) { renderWindow(ctrl.curStep); positionMarkers(ctrl.curStep); }
+  }, 120);
+});
+
+/* ---------------------------------------------------------------------------
+   5. INPUT HANDLING & VALIDATION
+   --------------------------------------------------------------------------- */
+
+/** Parse the comma-separated array field. Returns {data} or {error}. */
+function parseArrayField(str) {
+  if (!str.trim()) {
+    return { error: 'Enter at least one roll number — e.g. <code>101, 108, 115, 122</code>.' };
+  }
+  const parts = str.split(',').map(function (s) { return s.trim(); }).filter(Boolean);
+  if (!parts.length) {
+    return { error: 'Enter at least one roll number — e.g. <code>101, 108, 115, 122</code>.' };
+  }
+  if (parts.length > 40) {
+    return { error: 'Please keep the list to 40 roll numbers or fewer so the display stays readable.' };
+  }
+  const data = [];
+  for (const p of parts) {
+    const v = Number(p);
+    if (!Number.isFinite(v)) {
+      return { error: '\u201C' + escapeHtml(p) + '\u201D is not a number. Use comma-separated roll numbers only.' };
+    }
+    data.push(v);
+  }
+  return { data: data };
+}
+
+/** Index of the first element that breaks ascending order (-1 if sorted). */
+function firstUnsortedIndex(a) {
+  for (let i = 1; i < a.length; i++) if (a[i] < a[i - 1]) return i;
+  return -1;
+}
+
+/** A value guaranteed to be absent (first gap of size > 1, else max + 1). */
+function absentTargetValue(data) {
+  for (let i = 0; i + 1 < data.length; i++) {
+    if (data[i + 1] - data[i] > 1) return data[i] + 1;
+  }
+  return data[data.length - 1] + 1;
+}
+
+/** Inline config message (error / warn / ok). No alert() anywhere. */
+function setConfigMsg(kind, html) {
+  const m = els.configMsg;
+  if (!kind) { m.hidden = true; return; }
+  m.className = 'config-msg ' + kind;
+  m.innerHTML = html;
+  m.hidden = false;
+}
+
+/** Validate fields, warn about unsorted data, or load the trace.
+ *  `targetOverride` lets preset buttons force a specific target. */
+function loadFromFields(targetOverride) {
+  const parsed = parseArrayField(els.arrInput.value);
+  if (parsed.error) { setConfigMsg('error', parsed.error); return; }
+  const data = parsed.data;
+
+  let tStr = els.targetInput.value;
+  if (targetOverride !== undefined) {
+    tStr = String(targetOverride);
+    els.targetInput.value = tStr;
+  }
+  const t = Number(tStr);
+  if (tStr.trim() === '' || !Number.isFinite(t)) {
+    setConfigMsg('error', 'Enter a numeric target roll number, e.g. <code>146</code>.');
+    return;
+  }
+
+  const bad = firstUnsortedIndex(data);
+  if (bad >= 0) {
+    setConfigMsg('warn',
+      '<span class="wm">' + SVG_WARN + '</span><div><b>Binary search needs SORTED roll numbers.</b> ' +
+      escapeHtml(String(data[bad])) + ' at position ' + bad + ' is smaller than ' +
+      escapeHtml(String(data[bad - 1])) + ' at position ' + (bad - 1) +
+      ' — on an unsorted list, discarded halves could still hide the target roll number.' +
+      '<button class="btn sm" id="btnSortIt">' + SVG_SORT + ' Sort it for me</button></div>');
+    return;
+  }
+
+  loadDataset(data, t);
+  const n = data.length, mx = Math.floor(Math.log2(n)) + 1;
+  setConfigMsg('ok', 'Loaded ' + n + ' sorted roll number' + pl(n) + ' \u00B7 target ' +
+               escapeHtml(String(t)) + ' \u00B7 worst case \u230Alog\u2082 ' + n + '\u230B + 1 = ' +
+               mx + ' comparison' + pl(mx) + '.');
+}
+
+/* "Sort it for me" — delegated because the button lives in the message HTML */
+els.configMsg.addEventListener('click', function (e) {
+  if (!e.target.closest('#btnSortIt')) return;
+  const parsed = parseArrayField(els.arrInput.value);
+  if (parsed.data) {
+    parsed.data.sort(function (a, b) { return a - b; });
+    els.arrInput.value = parsed.data.join(', ');
+    loadFromFields();
+  }
+});
+
+els.btnLoad.addEventListener('click', function () { loadFromFields(); });
+
+/* presets ---------------------------------------------------------------- */
+ $('btnPDefault').addEventListener('click', function () {
+  els.arrInput.value = DEFAULT_ARRAY.join(', ');
+  els.targetInput.value = String(DEFAULT_TARGET);
+  loadFromFields();
+});
+
+/** Presets that derive a target from the CURRENT array in the input field. */
+function preset(targetOf) {
+  const parsed = parseArrayField(els.arrInput.value);
+  if (parsed.error) { setConfigMsg('error', parsed.error); return; }
+  if (firstUnsortedIndex(parsed.data) >= 0) { loadFromFields(); return; } // shows the sort warning
+  loadFromFields(targetOf(parsed.data));
+}
+ $('btnPFirst').addEventListener('click', function () { preset(function (d) { return d[0]; }); });
+ $('btnPLast').addEventListener('click', function () { preset(function (d) { return d[d.length - 1]; }); });
+ $('btnPBest').addEventListener('click', function () {          // data[(0 + n-1) / 2]
+  preset(function (d) { return d[Math.trunc((d.length - 1) / 2)]; });
+});
+ $('btnPAbsent').addEventListener('click', function () { preset(absentTargetValue); });
+
+/* random sorted roll-number list ----------------------------------------- */
+els.btnRandom.addEventListener('click', function () {
+  const size = Number(els.sizeSel.value);
+  const set = new Set();
+  while (set.size < size) set.add(100 + Math.floor(Math.random() * 898));
+  const data = Array.from(set).sort(function (a, b) { return a - b; });
+  let target;
+  if (Math.random() < 0.7) target = data[Math.floor(Math.random() * data.length)];
+  else { do { target = 100 + Math.floor(Math.random() * 898); } while (set.has(target)); }
+  els.arrInput.value = data.join(', ');
+  els.targetInput.value = String(target);
+  loadFromFields();
+});
+
+/* ---------------------------------------------------------------------------
+   6. THEME + INIT
+   --------------------------------------------------------------------------- */
+els.themeBtn.addEventListener('click', function () {
+  const root = document.documentElement;
+  root.dataset.theme = root.dataset.theme === 'dark' ? 'light' : 'dark';
+  els.themeBtn.setAttribute('aria-label',
+    'Switch to ' + (root.dataset.theme === 'dark' ? 'light' : 'dark') + ' theme');
+});
+
+/* boot: build the pseudocode panel and load the default example */
+buildCodePanel();
+els.arrInput.value = DEFAULT_ARRAY.join(', ');
+els.targetInput.value = String(DEFAULT_TARGET);
+loadFromFields();
+</script>
+</body>
+</html>
